@@ -119,7 +119,12 @@
       {:else}
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {#each moviesStore.movies as movie (movie.id)}
-            <MovieCard {movie} ondelete={handleDelete} onedit={handleEdit} />
+            <MovieCard 
+              {movie} 
+              ondelete={handleDelete} 
+              onedit={handleEdit} 
+              ontogglefavorite={(id) => moviesStore.toggleFavorite(id)}
+            />
           {/each}
         </div>
       {/if}

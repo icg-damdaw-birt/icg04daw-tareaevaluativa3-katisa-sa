@@ -238,6 +238,34 @@ describe('API Service - Autenticación', () => {
         expect((error as ApiError).message).toBe('No autorizado');
       }
     });
+
+    it('debería hacer un PATCH a /api/movies/:id/favorite', async () => {
+      // ARRANGE
+      const token = 'valid-token';
+      authToken.set(token);
+      const movieId = '123';
+      const mockMovieResponse = { id: movieId, title: 'Test Movie', isFavorite: true };
+
+      (globalThis.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name: string) => name === 'content-type' ? 'application/json' : null
+        },
+        json: async () => mockMovieResponse
+      });
+
+      // ACT
+      const response = await api.toggleFavorite(movieId);
+
+      // ASSERT
+      expect(response).toEqual(mockMovieResponse);
+      const callArgs = (globalThis.fetch as any).mock.calls[0];
+      expect(callArgs[0]).toBe(`http://localhost:3000/api/movies/${movieId}/favorite`);
+      expect(callArgs[1].method).toBe('PATCH');
+      const headers = callArgs[1].headers as Headers;
+      expect(headers.get('Authorization')).toBe(`Bearer ${token}`);
+    });
   });
 
   // ==========================================
