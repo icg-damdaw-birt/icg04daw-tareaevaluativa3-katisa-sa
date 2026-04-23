@@ -75,20 +75,31 @@
     }
   }
 
-  // Abre el modo edición con los datos de la tarjeta seleccionada.
-  function handleEdit(movie: Movie) {
-    editingMovie = movie;
-  }
-
-  // Alterna el estado de favorito de la película
-  async function handleToggleFavorite(id: string) {
+  // Actualiza la valoración de la película a través del store
+  async function handleRate(movie: Movie, rating: number) {
     feedbackMessage = null;
     moviesStore.clearError();
 
-    const ok = await moviesStore.toggleFavorite(id);
-    if (!ok) {
-      feedbackMessage = { type: 'error', text: 'Error al cambiar favorito.' };
+    const ok = await moviesStore.rateMovie(movie, rating);
+    if (ok) {
+      feedbackMessage = { type: 'info', text: 'Valoración actualizada.' };
     }
+  }
+
+  // Alterna el estado de favorito a través del store
+  async function handleToggleFavorite(movie: Movie) {
+    feedbackMessage = null;
+    moviesStore.clearError();
+
+    const ok = await moviesStore.toggleFavorite(movie);
+    if (ok) {
+      feedbackMessage = { type: 'info', text: movie.isFavorite ? 'Añadida a favoritos.' : 'Eliminada de favoritos.' };
+    }
+  }
+
+  // Abre el modo edición con los datos de la tarjeta seleccionada.
+  function handleEdit(movie: Movie) {
+    editingMovie = movie;
   }
 
   // Limpia el formulario lateral y vuelve al modo de creación.
@@ -134,6 +145,7 @@
               {movie} 
               ondelete={handleDelete} 
               onedit={handleEdit} 
+              onrate={handleRate} 
               ontogglefavorite={handleToggleFavorite} 
             />
           {/each}

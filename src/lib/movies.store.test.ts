@@ -17,6 +17,7 @@ vi.mock('./api.service', () => ({
     createMovie: vi.fn(),
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
+    rateMovie: vi.fn(),
     toggleFavorite: vi.fn(),
   }
 }));
@@ -223,32 +224,98 @@ describe('Movies Store (Svelte 5 Runes)', () => {
     });
   });
 
-  // ─── toggleFavorite ──────────────────────────────────────────────
-  describe('toggleFavorite()', () => {
-    it('debería alternar favorito de una película en el store', async () => {
-      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+  // ==========================================
+  // GRUPO: Favoritos (toggleFavorite)
+  // ==========================================
+  describe('toggleFavorite', () => {
+    it('debería alternar favorito y llamar al API (camino feliz)', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, isFavorite: false };
+      const updatedMovie = { ...initialMovie, isFavorite: true };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
       await moviesStore.loadMovies();
 
-      const toggledMovie: Movie = { ...mockMovies[0], isFavorite: true };
-      vi.mocked(api.toggleFavorite).mockResolvedValue(toggledMovie);
+      vi.mocked(api.toggleFavorite).mockResolvedValue(updatedMovie);
 
-      const ok = await moviesStore.toggleFavorite('1');
+      const movieToToggle = moviesStore.movies[0];
 
+      // ACT
+      const result = await moviesStore.toggleFavorite(movieToToggle);
+
+      // ASSERT
+      expect(result).toBe(true);
+      expect(movieToToggle.isFavorite).toBe(true);
       expect(api.toggleFavorite).toHaveBeenCalledWith('1');
-      expect(ok).toBe(true);
-
-      const movie = moviesStore.movies.find(m => m.id === '1');
-      expect(movie?.isFavorite).toBe(true);
     });
 
-    it('debería manejar error al alternar favorito', async () => {
-      vi.mocked(api.toggleFavorite).mockRejectedValue(new Error('Not found'));
+    it('debería hacer rollback y mostrar error si la API falla al alternar favorito', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, isFavorite: true };
 
-      const ok = await moviesStore.toggleFavorite('999');
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
 
-      expect(ok).toBe(false);
-      expect(moviesStore.error).toBe('Not found');
-      expect(moviesStore.mutating).toBe(false);
+      const errorMessage = 'Error al alternar favorito';
+      vi.mocked(api.toggleFavorite).mockRejectedValue(new Error(errorMessage));
+
+      const movieToToggle = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.toggleFavorite(movieToToggle);
+
+      // ASSERT
+      expect(result).toBe(false);
+      // El valor original se restaura
+      expect(movieToToggle.isFavorite).toBe(true);
+      expect(moviesStore.error).toBe(errorMessage);
+    });
+  });
+
+  // ==========================================
+  // GRUPO: Puntuación (rateMovie)
+  // ==========================================
+  describe('rateMovie', () => {
+    it('debería actualizar la valoración de una película y llamar al API (camino feliz)', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, rating: 0 };
+      const updatedMovie = { ...initialMovie, rating: 4 };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
+
+      vi.mocked(api.rateMovie).mockResolvedValue(updatedMovie);
+
+      const movieToRate = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.rateMovie(movieToRate, 4);
+
+      // ASSERT
+      expect(result).toBe(true);
+      expect(movieToRate.rating).toBe(4);
+      expect(api.rateMovie).toHaveBeenCalledWith('1', 4);
+    });
+
+    it('debería hacer rollback y mostrar error si la API falla', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, rating: 2 };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
+
+      const errorMessage = 'Error del servidor';
+      vi.mocked(api.rateMovie).mockRejectedValue(new Error(errorMessage));
+
+      const movieToRate = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.rateMovie(movieToRate, 5);
+
+      // ASSERT
+      expect(result).toBe(false);
+      expect(movieToRate.rating).toBe(2);
+      expect(moviesStore.error).toBe(errorMessage);
     });
   });
 });

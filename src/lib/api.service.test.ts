@@ -238,6 +238,69 @@ describe('API Service - Autenticación', () => {
         expect((error as ApiError).message).toBe('No autorizado');
       }
     });
+
+    it('debería alternar favorito correctamente', async () => {
+      // ARRANGE
+      const movieId = '123';
+      const expectedResponseText = { id: movieId, title: 'Inception', isFavorite: true };
+
+      // Simulamos respuesta válida del servidor
+      (globalThis.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (name: string) => (name === 'content-type' ? 'application/json' : null),
+        },
+        json: async () => expectedResponseText,
+      });
+
+      // ACT
+      const result = await api.toggleFavorite(movieId);
+
+      // ASSERT
+      expect(result).toEqual(expectedResponseText);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      const [url, options] = (globalThis.fetch as any).mock.calls[0];
+
+      // Verificamos la url y el verbo PATCH (sin body necesario)
+      expect(url).toBe(`http://localhost:3000/api/movies/${movieId}/favorite`);
+      expect(options.method).toBe('PATCH');
+    });
+  });
+
+  // ==========================================
+  // GRUPO: Rating
+  // ==========================================
+  describe('Rating', () => {
+    it('debería actualizar la valoración correctamente', async () => {
+      // ARRANGE
+      const movieId = '123';
+      const rating = 4;
+      const expectedResponseText = { id: movieId, title: 'Inception', rating };
+
+      // Simulamos respuesta válida del servidor
+      (globalThis.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (name: string) => (name === 'content-type' ? 'application/json' : null),
+        },
+        json: async () => expectedResponseText,
+      });
+
+      // ACT
+      const result = await api.rateMovie(movieId, rating);
+
+      // ASSERT
+      expect(result).toEqual(expectedResponseText);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      const [url, options] = (globalThis.fetch as any).mock.calls[0];
+
+      // Verificamos si la URL y los verbos/cuerpos son correctos
+      expect(url).toBe(`http://localhost:3000/api/movies/${movieId}/rating`);
+      expect(options.method).toBe('PATCH');
+      expect(options.body).toBe(JSON.stringify({ rating }));
+    });
   });
 
   // ==========================================
@@ -289,41 +352,6 @@ describe('API Service - Autenticación', () => {
       }
     });
   });
-
-  // ==========================================
-  // GRUPO: Películas
-  // ==========================================
-  describe('Peticiones de películas', () => {
-    it('debería alternar favorito haciendo PATCH al endpoint correcto', async () => {
-      // ARRANGE
-      const token = 'valid-token';
-      authToken.set(token);
-      const movieId = 'movie-123';
-      const mockUpdatedMovie = { id: movieId, title: 'Inception', isFavorite: true };
-
-      (globalThis.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: {
-          get: (name: string) => name === 'content-type' ? 'application/json' : null
-        },
-        json: async () => (mockUpdatedMovie)
-      });
-
-      // ACT
-      const result = await api.toggleFavorite(movieId);
-
-      // ASSERT
-      expect(result).toEqual(mockUpdatedMovie);
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-      
-      const callArgs = (globalThis.fetch as any).mock.calls[0];
-      expect(callArgs[0]).toBe(`http://localhost:3000/api/movies/${movieId}/favorite`);
-      expect(callArgs[1].method).toBe('PATCH');
-      expect(callArgs[1].body).toBeUndefined();
-    });
-  });
-
 });
 
 /**
