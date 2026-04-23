@@ -289,6 +289,41 @@ describe('API Service - Autenticación', () => {
       }
     });
   });
+
+  // ==========================================
+  // GRUPO: Películas
+  // ==========================================
+  describe('Peticiones de películas', () => {
+    it('debería alternar favorito haciendo PATCH al endpoint correcto', async () => {
+      // ARRANGE
+      const token = 'valid-token';
+      authToken.set(token);
+      const movieId = 'movie-123';
+      const mockUpdatedMovie = { id: movieId, title: 'Inception', isFavorite: true };
+
+      (globalThis.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name: string) => name === 'content-type' ? 'application/json' : null
+        },
+        json: async () => (mockUpdatedMovie)
+      });
+
+      // ACT
+      const result = await api.toggleFavorite(movieId);
+
+      // ASSERT
+      expect(result).toEqual(mockUpdatedMovie);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      
+      const callArgs = (globalThis.fetch as any).mock.calls[0];
+      expect(callArgs[0]).toBe(`http://localhost:3000/api/movies/${movieId}/favorite`);
+      expect(callArgs[1].method).toBe('PATCH');
+      expect(callArgs[1].body).toBeUndefined();
+    });
+  });
+
 });
 
 /**

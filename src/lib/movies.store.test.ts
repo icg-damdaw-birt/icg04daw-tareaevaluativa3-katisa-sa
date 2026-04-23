@@ -17,6 +17,7 @@ vi.mock('./api.service', () => ({
     createMovie: vi.fn(),
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
+    toggleFavorite: vi.fn(),
   }
 }));
 
@@ -218,6 +219,35 @@ describe('Movies Store (Svelte 5 Runes)', () => {
 
       expect(ok).toBe(false);
       expect(moviesStore.error).toBe('Forbidden');
+      expect(moviesStore.mutating).toBe(false);
+    });
+  });
+
+  // ─── toggleFavorite ──────────────────────────────────────────────
+  describe('toggleFavorite()', () => {
+    it('debería alternar favorito de una película en el store', async () => {
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const toggledMovie: Movie = { ...mockMovies[0], isFavorite: true };
+      vi.mocked(api.toggleFavorite).mockResolvedValue(toggledMovie);
+
+      const ok = await moviesStore.toggleFavorite('1');
+
+      expect(api.toggleFavorite).toHaveBeenCalledWith('1');
+      expect(ok).toBe(true);
+
+      const movie = moviesStore.movies.find(m => m.id === '1');
+      expect(movie?.isFavorite).toBe(true);
+    });
+
+    it('debería manejar error al alternar favorito', async () => {
+      vi.mocked(api.toggleFavorite).mockRejectedValue(new Error('Not found'));
+
+      const ok = await moviesStore.toggleFavorite('999');
+
+      expect(ok).toBe(false);
+      expect(moviesStore.error).toBe('Not found');
       expect(moviesStore.mutating).toBe(false);
     });
   });
