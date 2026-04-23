@@ -7,13 +7,15 @@
     showActions = true,
     ondelete,
     onedit,
-    onrate
+    onrate,
+    ontogglefavorite
   }: {
     movie: Movie;
     showActions?: boolean;
     ondelete?: (id: string) => void;
     onedit?: (movie: Movie) => void;
     onrate?: (movie: Movie, rating: number) => void;
+    ontogglefavorite?: (movie: Movie) => void;
   } = $props();
 
   // Handlers: ejecutan callbacks del padre directamente
@@ -40,9 +42,22 @@
   {/if}
 
   <div class="flex flex-1 flex-col gap-3 p-4">
-    <header>
-      <h3 class="text-lg font-semibold text-slate-900">{movie.title}</h3>
-      <p class="text-sm text-slate-600">Dirigida por {movie.director}</p>
+    <header class="flex items-start justify-between">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">{movie.title}</h3>
+        <p class="text-sm text-slate-600">Dirigida por {movie.director}</p>
+      </div>
+      <!-- Botón de favorito -->
+      <button 
+        type="button" 
+        class="text-2xl transition hover:scale-110 focus:outline-none"
+        aria-label={movie.isFavorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
+        onclick={() => ontogglefavorite?.(movie)}
+      >
+        <span class={movie.isFavorite ? 'text-red-500' : 'text-slate-300'}>
+          {movie.isFavorite ? '♥' : '♡'}
+        </span>
+      </button>
     </header>
 
     <!-- Sistema de puntuación con 5 estrellas -->

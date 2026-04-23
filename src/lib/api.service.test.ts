@@ -238,6 +238,34 @@ describe('API Service - Autenticación', () => {
         expect((error as ApiError).message).toBe('No autorizado');
       }
     });
+
+    it('debería alternar favorito correctamente', async () => {
+      // ARRANGE
+      const movieId = '123';
+      const expectedResponseText = { id: movieId, title: 'Inception', isFavorite: true };
+
+      // Simulamos respuesta válida del servidor
+      (globalThis.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (name: string) => (name === 'content-type' ? 'application/json' : null),
+        },
+        json: async () => expectedResponseText,
+      });
+
+      // ACT
+      const result = await api.toggleFavorite(movieId);
+
+      // ASSERT
+      expect(result).toEqual(expectedResponseText);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      const [url, options] = (globalThis.fetch as any).mock.calls[0];
+
+      // Verificamos la url y el verbo PATCH (sin body necesario)
+      expect(url).toBe(`http://localhost:3000/api/movies/${movieId}/favorite`);
+      expect(options.method).toBe('PATCH');
+    });
   });
 
   // ==========================================

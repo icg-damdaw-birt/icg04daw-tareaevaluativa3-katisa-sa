@@ -83,6 +83,27 @@ export const moviesStore = {
     }
   },
 
+  // Alternar favorito con optimistic update
+  async toggleFavorite(movie: Movie): Promise<boolean> {
+    const previousState = movie.isFavorite;
+
+    // Optimistic Update (mutación directa - Svelte 5)
+    movie.isFavorite = !movie.isFavorite;
+    error = null;
+
+    try {
+      const updatedMovie = await api.toggleFavorite(movie.id);
+      // Asegurar el estado validado por BD
+      movie.isFavorite = updatedMovie.isFavorite;
+      return true;
+    } catch (err) {
+      // Rollback
+      movie.isFavorite = previousState;
+      error = err instanceof Error ? err.message : 'Error al alternar favorito';
+      return false;
+    }
+  },
+
   // Actualizar valoración de una película con optimistic update
   async rateMovie(movie: Movie, rating: number): Promise<boolean> {
     // 1. Validación

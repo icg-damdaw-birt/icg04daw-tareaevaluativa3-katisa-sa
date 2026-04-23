@@ -18,7 +18,7 @@ export interface Movie {
   updatedAt?: string | null;
   
   /** Indica si la película está marcada como favorita */
-  favorite?: boolean;
+  isFavorite?: boolean;
   
   /** Valoración de la película de 0 a 5. (0 = no calificada) */
   rating?: number;

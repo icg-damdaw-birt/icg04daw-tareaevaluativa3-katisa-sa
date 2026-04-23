@@ -18,6 +18,7 @@ vi.mock('./api.service', () => ({
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
     rateMovie: vi.fn(),
+    toggleFavorite: vi.fn(),
   }
 }));
 
@@ -220,6 +221,54 @@ describe('Movies Store (Svelte 5 Runes)', () => {
       expect(ok).toBe(false);
       expect(moviesStore.error).toBe('Forbidden');
       expect(moviesStore.mutating).toBe(false);
+    });
+  });
+
+  // ==========================================
+  // GRUPO: Favoritos (toggleFavorite)
+  // ==========================================
+  describe('toggleFavorite', () => {
+    it('debería alternar favorito y llamar al API (camino feliz)', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, isFavorite: false };
+      const updatedMovie = { ...initialMovie, isFavorite: true };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
+
+      vi.mocked(api.toggleFavorite).mockResolvedValue(updatedMovie);
+
+      const movieToToggle = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.toggleFavorite(movieToToggle);
+
+      // ASSERT
+      expect(result).toBe(true);
+      expect(movieToToggle.isFavorite).toBe(true);
+      expect(api.toggleFavorite).toHaveBeenCalledWith('1');
+    });
+
+    it('debería hacer rollback y mostrar error si la API falla al alternar favorito', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, isFavorite: true };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
+
+      const errorMessage = 'Error al alternar favorito';
+      vi.mocked(api.toggleFavorite).mockRejectedValue(new Error(errorMessage));
+
+      const movieToToggle = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.toggleFavorite(movieToToggle);
+
+      // ASSERT
+      expect(result).toBe(false);
+      // El valor original se restaura
+      expect(movieToToggle.isFavorite).toBe(true);
+      expect(moviesStore.error).toBe(errorMessage);
     });
   });
 
