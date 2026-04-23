@@ -17,6 +17,7 @@ vi.mock('./api.service', () => ({
     createMovie: vi.fn(),
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
+    rateMovie: vi.fn(),
   }
 }));
 
@@ -219,6 +220,53 @@ describe('Movies Store (Svelte 5 Runes)', () => {
       expect(ok).toBe(false);
       expect(moviesStore.error).toBe('Forbidden');
       expect(moviesStore.mutating).toBe(false);
+    });
+  });
+
+  // ==========================================
+  // GRUPO: Puntuación (rateMovie)
+  // ==========================================
+  describe('rateMovie', () => {
+    it('debería actualizar la valoración de una película y llamar al API (camino feliz)', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, rating: 0 };
+      const updatedMovie = { ...initialMovie, rating: 4 };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
+
+      vi.mocked(api.rateMovie).mockResolvedValue(updatedMovie);
+
+      const movieToRate = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.rateMovie(movieToRate, 4);
+
+      // ASSERT
+      expect(result).toBe(true);
+      expect(movieToRate.rating).toBe(4);
+      expect(api.rateMovie).toHaveBeenCalledWith('1', 4);
+    });
+
+    it('debería hacer rollback y mostrar error si la API falla', async () => {
+      // ARRANGE
+      const initialMovie = { id: '1', title: 'Dune', director: 'Denis Villeneuve', year: 2021, rating: 2 };
+
+      vi.mocked(api.getMovies).mockResolvedValue([initialMovie]);
+      await moviesStore.loadMovies();
+
+      const errorMessage = 'Error del servidor';
+      vi.mocked(api.rateMovie).mockRejectedValue(new Error(errorMessage));
+
+      const movieToRate = moviesStore.movies[0];
+
+      // ACT
+      const result = await moviesStore.rateMovie(movieToRate, 5);
+
+      // ASSERT
+      expect(result).toBe(false);
+      expect(movieToRate.rating).toBe(2);
+      expect(moviesStore.error).toBe(errorMessage);
     });
   });
 });

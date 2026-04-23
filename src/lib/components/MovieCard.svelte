@@ -6,12 +6,14 @@
     movie,
     showActions = true,
     ondelete,
-    onedit
+    onedit,
+    onrate
   }: {
     movie: Movie;
     showActions?: boolean;
     ondelete?: (id: string) => void;
     onedit?: (movie: Movie) => void;
+    onrate?: (movie: Movie, rating: number) => void;
   } = $props();
 
   // Handlers: ejecutan callbacks del padre directamente
@@ -42,6 +44,22 @@
       <h3 class="text-lg font-semibold text-slate-900">{movie.title}</h3>
       <p class="text-sm text-slate-600">Dirigida por {movie.director}</p>
     </header>
+
+    <!-- Sistema de puntuación con 5 estrellas -->
+    <div class="flex gap-1 text-2xl cursor-pointer">
+      {#each [1, 2, 3, 4, 5] as star}
+        <!-- Si la estrella clicada es igual al rating actual, enviamos 0 (despuntuar) -->
+        <!-- Si es distinta, enviamos el valor de la estrella (ratear) -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <span 
+          class={star <= (movie.rating ?? 0) ? 'text-yellow-400' : 'text-gray-300'}
+          onclick={() => onrate?.(movie, star === movie.rating ? 0 : star)}
+        >
+          {star <= (movie.rating ?? 0) ? '★' : '☆'}
+        </span>
+      {/each}
+    </div>
 
     <div class="mt-auto text-sm text-slate-500">
       {#if movie.year}

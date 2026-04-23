@@ -83,6 +83,36 @@ export const moviesStore = {
     }
   },
 
+  // Actualizar valoración de una película con optimistic update
+  async rateMovie(movie: Movie, rating: number): Promise<boolean> {
+    // 1. Validación
+    if (!Number.isInteger(rating) || rating < 0 || rating > 5) {
+      error = 'La valoración debe ser un número entero entre 0 y 5';
+      return false;
+    }
+
+    // 2. Guardar estado previo para posible rollback
+    const previousRating = movie.rating;
+    
+    // 3. Optimistic Update (Mutación directa - Svelte 5)
+    movie.rating = rating;
+    error = null;
+
+    try {
+      // 4. Persistir en el backend
+      const updatedMovie = await api.rateMovie(movie.id, rating);
+      
+      // Asegurar que el objeto se queda con la versión de la DB
+      movie.rating = updatedMovie.rating;
+      return true;
+    } catch (err) {
+      // 5. Rollback en caso de error
+      movie.rating = previousRating;
+      error = err instanceof Error ? err.message : 'Error al puntuar la película';
+      return false;
+    }
+  },
+
   // Limpiar estado completo
   reset() {
     movies = [];

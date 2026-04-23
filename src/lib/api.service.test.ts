@@ -241,6 +241,41 @@ describe('API Service - Autenticación', () => {
   });
 
   // ==========================================
+  // GRUPO: Rating
+  // ==========================================
+  describe('Rating', () => {
+    it('debería actualizar la valoración correctamente', async () => {
+      // ARRANGE
+      const movieId = '123';
+      const rating = 4;
+      const expectedResponseText = { id: movieId, title: 'Inception', rating };
+
+      // Simulamos respuesta válida del servidor
+      (globalThis.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: (name: string) => (name === 'content-type' ? 'application/json' : null),
+        },
+        json: async () => expectedResponseText,
+      });
+
+      // ACT
+      const result = await api.rateMovie(movieId, rating);
+
+      // ASSERT
+      expect(result).toEqual(expectedResponseText);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      const [url, options] = (globalThis.fetch as any).mock.calls[0];
+
+      // Verificamos si la URL y los verbos/cuerpos son correctos
+      expect(url).toBe(`http://localhost:3000/api/movies/${movieId}/rating`);
+      expect(options.method).toBe('PATCH');
+      expect(options.body).toBe(JSON.stringify({ rating }));
+    });
+  });
+
+  // ==========================================
   // GRUPO: Manejo de errores HTTP
   // ==========================================
   describe('Manejo de errores', () => {
